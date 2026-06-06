@@ -8,11 +8,12 @@ Done:
 - Chose BYOK Next.js API proxy architecture.
 - Added documentation-first project plan.
 - Added timed word selection and command hint popup design to the documentation.
+- Added Quiet Library interface direction as a dedicated documentation file.
 
 Next:
 
 1. Review documentation and adjust scope if needed.
-2. Confirm whether timed word selection belongs in the first runnable slice or after baseline playback.
+2. Review Quiet Library interface doc against Claude Design output.
 3. Start Phase 1 scaffold only after docs are accepted.
 
 Blockers:

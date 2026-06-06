@@ -2,7 +2,7 @@
 
 ## Architecture Summary
 
-LangStop should be a Next.js App Router application with a client-heavy reader and thin API routes for provider calls. The browser owns documents, playback state, local study data, and user-pasted keys. API routes proxy ElevenLabs and LLM calls per request, normalize provider behavior, and return simple response shapes to the UI.
+LangStop should be a Next.js App Router application with a client-heavy reader and thin API routes for provider calls. The browser owns documents, playback state, local study data, settings, and user-pasted keys. Keys are session-only by default unless the user explicitly opts into durable local storage. API routes proxy ElevenLabs and LLM calls per request, normalize provider behavior, and return simple response shapes to the UI.
 
 ## System Context
 
@@ -29,9 +29,11 @@ flowchart TB
 ## Boundary Decisions
 
 - **Client owns product state:** current document, current sentence, playback state, voice state, study tray state, settings, and local records.
+- **Settings persistence is split by sensitivity:** non-secret preferences can persist locally, while API keys use session-only storage by default and move to durable browser storage only after explicit "remember keys on this device" opt-in.
 - **API routes own provider calls:** ElevenLabs TTS, command interpretation, translation, explanation, flashcard generation.
 - **IndexedDB owns persistence:** documents, reading positions, bookmarks, notes, study events, flashcards, and review logs.
 - **No server persistence:** API keys and user content are not written server-side.
+- **Review scheduling is client-side:** `ts-fsrs` runs in the browser and writes card state plus `ReviewLog` records to IndexedDB. The MVP does not need review API routes.
 
 ## Proposed Subsystems
 
@@ -62,7 +64,7 @@ Responsibilities:
 
 - Convert ElevenLabs character alignment into token timing.
 - Support target modes `whole_sentence` and `word_at_offset`.
-- Resolve offsets such as `0`, `-1`, `-2`, and `-4` relative to the interruption token.
+- Resolve offsets such as `0`, `-1`, `-2`, and `-4` relative to the interruption token, plus `+1` from an existing paused word selection.
 - Clamp relative offsets to valid token boundaries.
 - Fall back to `whole_sentence` when timestamp alignment is unavailable.
 
@@ -83,7 +85,7 @@ Responsibilities:
 
 - Store bookmarks, notes, translations, and explanations.
 - Generate flashcards from LLM responses.
-- Schedule and review cards using FSRS.
+- Schedule and review cards in the browser using FSRS.
 
 ### Provider Domain
 
@@ -146,7 +148,8 @@ Response:
 Notes:
 
 - The client should prefer `normalizedAlignment` when present.
-- If this route fails, playback should fall back to `/api/elevenlabs/tts`, then browser TTS.
+- The implementation must include a manual smoke test with the default model and a short sample sentence to confirm that the response includes usable character timing before timed word selection is treated as available.
+- If this route fails or returns no usable alignment, playback should fall back to `/api/elevenlabs/tts`, then browser TTS, and word-target commands should degrade to `whole_sentence`.
 
 ### `POST /api/llm/command`
 
@@ -181,6 +184,16 @@ Response:
   "confidence": 0.82
 }
 ```
+
+Response contract:
+
+- `action` is one of `translate`, `explain`, `spell`, `examples`, `select_target`, `bookmark`, `notes_begin`, `notes_end`, `resume`, or `unknown`.
+- `select_target` is the normalized action for paused refinement commands such as `this word`, `last word`, `next word`, `N words ago`, and `whole sentence`.
+- `target` is optional. It is required for target-specific actions such as `translate`, `explain`, `spell`, `examples`, and `select_target`, and omitted for actions such as `bookmark`, `notes_begin`, `notes_end`, and `resume`.
+- `target.mode` is `whole_sentence` or `word_at_offset`. For `word_at_offset`, `target.offset` is relative to the interruption token by default, or to the current selected token when the paused refinement is `next word`.
+- `target.text` is optional in the command response because the client may need to resolve the final token from the local timeline before sending `/api/llm/study`.
+- `confidence` is a number from `0` to `1`.
+- If `confidence` is below `0.6`, or if a target-specific action is missing `target`, the client treats the command as `unknown`, keeps the command popup open, and shows examples instead of executing the action.
 
 ### `POST /api/llm/study`
 
@@ -246,8 +259,10 @@ stateDiagram-v2
     Playing --> StudyPaused: translate / explain / note
     FallbackTts --> Playing: browser TTS speaking
     StudyPaused --> Playing: resume
+    StudyPaused --> LoadingAudio: next / previous sentence
     Playing --> Paused: pause
     Paused --> Playing: resume
+    Paused --> LoadingAudio: next / previous sentence
     Ready --> Error: parsing failed
     LoadingAudio --> Error: unrecoverable playback error
     Error --> Ready: user recovers
@@ -300,3 +315,5 @@ Minimum local entities:
 - `SelectionTarget`: `whole_sentence` or `word_at_offset`, selected token index, offset, text, timing availability.
 - `Flashcard`: front, back, source term, source sentence, FSRS card state, due date.
 - `ReviewLog`: flashcard ID, rating, review time, scheduling result.
+
+No review endpoints are planned for the MVP. Review cards, ratings, due dates, and scheduling results stay in IndexedDB unless a future sync feature moves review state server-side.

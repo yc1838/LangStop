@@ -30,7 +30,23 @@ The primary user is a language learner reading long-form material above their cu
 - Server-side key vault.
 - Mobile native app.
 
+## Settings And Key Handling
+
+- Non-secret preferences such as provider choice, native language, voice, and reading settings can persist locally.
+- API keys are session-only by default.
+- The setup sheet may offer `Remember keys on this device` as an explicit opt-in for durable browser storage.
+- Settings must include a clear `Clear keys` action.
+
 ## Functional Requirements
+
+### Interface And Experience
+
+- The visual direction is Quiet Library: ink, ivory, sage, and copper.
+- The main screen prioritizes an immersive document page, not a dashboard or landing page.
+- Desktop layout uses margin annotations and a collapsible Study Tray.
+- Mobile layout uses inline annotations and a bottom drawer for study artifacts.
+- The first-run setup sheet collects BYOK provider settings before reading.
+- The command hint popup appears after `LangStop` and mirrors available voice actions as clickable chips.
 
 ### Document Reading
 
@@ -47,6 +63,7 @@ The primary user is a language learner reading long-form material above their cu
 - App uses `eleven_flash_v2_5` by default.
 - Browser TTS is used when ElevenLabs fails, quota is exceeded, or no key is provided.
 - When timestamp alignment is unavailable, word-target commands fall back to whole-sentence translation with a visible UI hint.
+- The implementation must include a manual smoke test for the default ElevenLabs model before timestamped word selection is considered available.
 
 ### Voice Commands
 
@@ -55,6 +72,7 @@ The primary user is a language learner reading long-form material above their cu
 - After the wake phrase is heard, the UI shows a small command hint popup with context-aware next commands.
 - Supported translation target commands include `translate`, `translate this word`, `translate last word`, and `translate N words ago`.
 - While paused after a translation, supported refinement commands include `this word`, `last word`, `next word`, `N words ago`, `whole sentence`, and `resume`.
+- Paused refinement commands are parsed as target selection updates and reuse the current study intent.
 - Manual controls exist for all voice actions.
 - Voice command support is treated as progressive enhancement because browser speech recognition support varies.
 
@@ -78,7 +96,7 @@ The primary user is a language learner reading long-form material above their cu
 ### Review
 
 - App shows a simple due review list.
-- Flashcard scheduling uses FSRS through `ts-fsrs`.
+- Flashcard scheduling uses FSRS through `ts-fsrs` in the browser.
 - MVP review UI supports basic ratings: Again, Hard, Good, Easy.
 
 ## Success Criteria

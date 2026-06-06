@@ -14,7 +14,7 @@ Build a demoable LangStop MVP capture loop: import a document, read aloud, inter
 
 - Next.js BYOK web app.
 - ElevenLabs sentence-level TTS with browser fallback.
-- ElevenLabs timestamped TTS for selected-word targeting.
+- ElevenLabs timestamped TTS for selected-word targeting, with smoke-tested whole-sentence fallback.
 - LLM provider proxy layer.
 - PDF/EPUB import.
 - Wake phrase command flow.
@@ -22,7 +22,7 @@ Build a demoable LangStop MVP capture loop: import a document, read aloud, inter
 - Relative word commands: this word, last word, N words ago, whole sentence.
 - Bookmarks, dictated notes, translations, explanations.
 - Auto-created context vocab flashcards.
-- Simple due review list with FSRS.
+- Simple due review list with browser-side FSRS.
 
 ## Out Of Scope
 

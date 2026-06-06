@@ -15,7 +15,11 @@ sequenceDiagram
     alt Missing required settings
         UI->>User: Show setup sheet
         User->>UI: Paste ElevenLabs key, LLM key, provider, language
-        UI->>Store: Save to sessionStorage by default
+        UI->>Store: Save non-secret settings locally
+        UI->>Store: Save API keys to sessionStorage by default
+        opt User enables remember keys on this device
+            UI->>Store: Save API keys to localStorage
+        end
     else Settings exist
         UI->>User: Show reader
     end
@@ -85,10 +89,12 @@ flowchart TD
     K -->|"last word"| M["Select token at index - 1"]
     K -->|"N words ago"| N["Select token at index - N"]
     K -->|"whole sentence"| O["Select full sentence"]
+    K -->|"next word while paused"| Q["Select prior selected token + 1"]
     L --> P["Clamp target and show annotation"]
     M --> P
     N --> P
     O --> P
+    Q --> P
 ```
 
 ## Voice Command Routing
@@ -106,9 +112,11 @@ flowchart TD
     G -->|"notes_end"| J["Save dictated note"]
     G -->|"translate whole_sentence"| K["Pause and request sentence translation"]
     G -->|"translate word_at_offset"| L["Resolve selected word and request word translation"]
+    G -->|"select_target next word"| P["Resolve selected word + 1 while paused"]
     G -->|"explain / spell / examples"| M["Request deep dive for selected target"]
     G -->|"resume"| N["Resume playback"]
     G -->|"unknown"| O["Keep popup open with examples"]
+    P --> L
 ```
 
 ## Command Hint Popup

@@ -73,8 +73,12 @@ flowchart TD
     D --> E["Voice interruption detected"]
     E --> F["Apply latency backtrack offset"]
     F --> G["Find token whose timing contains spokenTime"]
-    G --> H["Apply command offset"]
+    G --> M{"Command context"}
+    M -->|"playback interruption"| H["Apply command offset from active base token"]
+    M -->|"paused next word"| N["Apply offset from selected token + 1"]
+    M -->|"paused previous / N words ago"| H
     H --> I["Clamp to token boundaries"]
+    N --> I
     I --> J{"Target mode"}
     J -->|"word_at_offset"| K["Send selected token + sentence context"]
     J -->|"whole_sentence"| L["Send whole sentence"]
@@ -102,7 +106,7 @@ Default options while paused after translation:
 - `explain`
 - `resume`
 
-The popup should update as partial speech arrives. If the recognized command is unknown, the popup remains visible and highlights examples rather than showing a hard error.
+The popup should update as partial speech arrives. `2 words ago` is the taught default for the broader `N words ago` command family; the parser still supports offsets such as `4 words ago`. If the recognized command is unknown, the popup remains visible and highlights examples rather than showing a hard error.
 
 ## Fallbacks
 
@@ -116,6 +120,7 @@ The popup should update as partial speech arrives. If the recognized command is 
 
 - Use ElevenLabs timestamp-capable TTS for aligned playback.
 - Prefer `normalized_alignment` when available.
+- Before enabling timed word selection for the default ElevenLabs model, run a manual smoke test with a short sentence and verify that `alignment` or `normalized_alignment` contains character timing arrays.
 - Build tokens with `Intl.Segmenter` where supported; fall back to whitespace tokenization for space-separated languages.
 - Keep `vadLatencyOffsetSeconds` configurable, starting at `0.2`.
 - Do not build word-by-word karaoke highlighting for the MVP. Only highlight the selected word after interruption.

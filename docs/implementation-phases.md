@@ -48,12 +48,14 @@ Deliverables:
 
 - Dexie IndexedDB schema.
 - CRUD functions for documents, positions, bookmarks, notes, study events, flashcards, and review logs.
+- Settings persistence for non-secret preferences plus session-only API key handling by default.
 - Tests for save/restore behavior.
 
 Exit criteria:
 
 - Imported sample document state can be saved and restored.
 - Flashcards and review logs persist locally.
+- API keys are not persisted unless the user explicitly enables `Remember keys on this device`.
 
 ## Phase 3: Provider API Layer
 
@@ -73,6 +75,7 @@ Exit criteria:
 - API route tests pass with mocked providers.
 - Keys are accepted per request and never persisted server-side.
 - Provider errors produce user-safe error messages.
+- Missing timestamp alignment is handled as a normal fallback case in route tests.
 
 ## Phase 4: Reader MVP
 
@@ -92,6 +95,7 @@ Exit criteria:
 - User can import a document and hear sentence-by-sentence narration.
 - Playback can recover from a failed ElevenLabs request.
 - When timestamp data is available, the app can identify the selected word near the interruption point.
+- A manual smoke test verifies whether the default ElevenLabs model returns usable character timing; if not, the app uses whole-sentence fallback.
 
 ## Phase 5: Voice And Study Capture
 
@@ -122,12 +126,13 @@ Deliverables:
 - Auto-created context vocab cards.
 - Undo action for newly created cards.
 - Due review list.
-- FSRS scheduling with Again, Hard, Good, Easy.
+- Browser-side FSRS scheduling with Again, Hard, Good, Easy.
 
 Exit criteria:
 
 - Translation or explanation can create a flashcard.
 - User can review a due card and update its next due date.
+- Review scheduling and logging use IndexedDB only; no MVP review API routes are required.
 
 ## Phase 7: Quiet Library Polish And Demo Hardening
 
@@ -138,6 +143,8 @@ Deliverables:
 - Quiet Library visual styling.
 - Responsive desktop and mobile layouts.
 - First-run setup sheet.
+- Live command hint popup styling.
+- Margin annotations and Study Tray visual treatment.
 - Empty, loading, error, and fallback states.
 - Demo script and known limitations.
 
